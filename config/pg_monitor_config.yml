@@ -2,16 +2,16 @@
 
 # --- Configurações do Banco de Dados ---
 database:
-  host: "10.136.186.107" # Altere para o IP ou hostname do seu servidor PostgreSQL
-  port: 5432            # Porta do PostgreSQL
-  name: "mbweb"         # Altere para o nome do seu banco de dados
-  user: "repack"        # Altere para o usuário do PostgreSQL que o script usará
-  password: "ePgjkdGtjMamTmdz" # ALtere para a senha do seu usuário PostgreSQL. Use uma senha forte!   
+  host: "" # Altere para o IP ou hostname do seu servidor PostgreSQL
+  port:            # Porta do PostgreSQL
+  name: ""         # Altere para o nome do seu banco de dados
+  user: ""        # Altere para o usuário do PostgreSQL que o script usará
+  password: "" # ALtere para a senha do seu usuário PostgreSQL. Use uma senha forte!   
 # --- Configurações de E-mail ---
 email:
-  sender_email: "monitor.postgresql.32@gmail.com" # Altere para o seu e-mail remetente
-  sender_password: "djnt tsev puxj hxez" # ALtere para a senha do seu e-mail remetente ou senha de aplicativo (se usar Gmail)
-  receiver_email: "joaovic32@gmail.com" # Altere para o e-mail que receberá os alertas
+  sender_email: "" # Altere para o seu e-mail remetente
+  sender_password: "" # ALtere para a senha do seu e-mail remetente ou senha de aplicativo (se usar Gmail)
+  receiver_email: "" # Altere para o e-mail que receberá os alertas
   smtp_address: "smtp.gmail.com"  # Servidor SMTP do seu provedor de e-mail
   smtp_port: 587                  # Porta SMTP (587 para TLS/STARTTLS)
   smtp_domain: "gmail.com"        # Domínio do seu servidor SMTP (ex: gmail.com, outlook.com)
