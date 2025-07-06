@@ -1,0 +1,31 @@
+# Ignorar arquivos de configuração sensíveis
+config/pg_monitor_config.yml # Se você mantiver credenciais nele para desenvolvimento local.
+.env                        # Se você usar o gem dotenv para variáveis de ambiente locais.
+
+# Ignorar arquivos de log gerados pelo script
+/var/log/pg_monitor/
+*.log
+*.json # Se os arquivos de alerta ou histórico forem .json e temporários
+
+# Ignorar arquivos de cache e dependências do Ruby
+.bundle/
+vendor/bundle/
+Gemfile.lock
+tmp/
+log/
+
+# Ignorar executáveis e temporários
+*.rbc
+*.o
+*.so
+*.gem
+*.tar.gz
+*.zip
+pkg/
+
+# Ignorar diretórios específicos do sistema operacional ou IDEs
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

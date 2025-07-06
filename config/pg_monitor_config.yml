@@ -1,0 +1,42 @@
+# pg_monitor_config.yml
+
+# --- Configurações do Banco de Dados ---
+database:
+  host: "10.136.186.107" # Altere para o IP ou hostname do seu servidor PostgreSQL
+  port: 5432            # Porta do PostgreSQL
+  name: "mbweb"         # Altere para o nome do seu banco de dados
+  user: "repack"        # Altere para o usuário do PostgreSQL que o script usará
+  password: "ePgjkdGtjMamTmdz" # ALtere para a senha do seu usuário PostgreSQL. Use uma senha forte!   
+# --- Configurações de E-mail ---
+email:
+  sender_email: "monitor.postgresql.32@gmail.com" # Altere para o seu e-mail remetente
+  sender_password: "djnt tsev puxj hxez" # ALtere para a senha do seu e-mail remetente ou senha de aplicativo (se usar Gmail)
+  receiver_email: "joaovic32@gmail.com" # Altere para o e-mail que receberá os alertas
+  smtp_address: "smtp.gmail.com"  # Servidor SMTP do seu provedor de e-mail
+  smtp_port: 587                  # Porta SMTP (587 para TLS/STARTTLS)
+  smtp_domain: "gmail.com"        # Domínio do seu servidor SMTP (ex: gmail.com, outlook.com)
+
+# --- Limiares de Alerta ---
+thresholds:
+  iostat_threshold_kb_s: 50000    # Limiar de I/O de disco em KB/s. Acima disso, um alerta é disparado. (ex: 50000 KB/s = 50 MB/s)
+  iostat_device: "sda"            # Dispositivo de disco a ser monitorado (ex: sda, vda, nvme0n1)
+  cpu_threshold_percent: 80       # Limiar de uso de CPU em porcentagem. Acima disso, um alerta é disparado.
+  query_alert_threshold_minutes: 60 # Duração em minutos para alertar sobre consultas longas.
+  query_kill_threshold_minutes: 120 # Duração em minutos para encerrar (kill) consultas excessivamente longas.
+  heap_cache_hit_ratio_min: 85    # Percentual mínimo desejado para o Heap Cache Hit Ratio. Abaixo disso, um alerta é disparado.
+  index_cache_hit_ratio_min: 85   # Percentual mínimo desejado para o Index Cache Hit Ratio. Abaixo disso, um alerta é disparado.
+  table_growth_threshold_percent: 20 # Percentual de crescimento de tabela na última semana para disparar um alerta.
+
+# --- Configurações para Cooldown de Alertas ---
+# Tempo de espera em minutos antes de enviar o mesmo tipo de alerta novamente.
+cooldown:
+  alert_cooldown_minutes: 30
+  # Caminho do arquivo para armazenar o timestamp do último alerta enviado.
+  last_alert_file: "/tmp/pg_monitor_last_alert.json"
+
+# --- Configurações de Logging ---
+logging:
+  log_file: "/var/log/pg_monitor/pg_monitor.log" # Caminho completo para o arquivo de log do script.
+  log_level: "info" # Nível de log (debug, info, warn, error, fatal).
+  log_rotation_size_mb: 10 # Tamanho máximo do arquivo de log em MB antes da rotação.
+  log_rotation_count: 5 # Número de arquivos de log antigos a serem mantidos durante a rotação. 
