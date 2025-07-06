@@ -1,0 +1,49 @@
+# pg_monitor_config.yml
+
+# --- Database Configuration ---
+database:
+  host: "" # Change to the IP or hostname of your PostgreSQL server
+  port: 5432           # PostgreSQL port
+  name: "mbweb"        # Change to your database name
+  # user and password are read from PG_USER and PG_PASSWORD environment variables.
+
+# --- Email Configuration ---
+email:
+  sender_email: "" # Change to your sender email
+  # sender_password is read from the EMAIL_PASSWORD environment variable.
+  receiver_email: "" # Change to the email that will receive alerts
+  smtp_address: "smtp.gmail.com"  # SMTP server of your email provider
+  smtp_port: 587             # SMTP port (587 for TLS/STARTTLS)
+  smtp_domain: "gmail.com"     # SMTP server domain (e.g., gmail.com, outlook.com)
+
+# --- Alert Thresholds ---
+thresholds:
+  iostat_threshold_kb_s: 50000    # Disk I/O threshold in KB/s (e.g., 50000 KB/s = 50 MB/s)
+  iostat_device: "sda"          # Disk device to monitor (e.g., sda, vda, nvme0n1)
+  cpu_threshold_percent: 80     # CPU usage threshold in percentage. An alert is triggered if exceeded.
+  query_alert_threshold_minutes: 60 # Duration in minutes to alert on long queries.
+  query_kill_threshold_minutes: 120 # Duration in minutes to kill excessively long queries.
+  heap_cache_hit_ratio_min: 85    # Minimum desired Heap Cache Hit Ratio percentage. An alert is triggered if below this.
+  index_cache_hit_ratio_min: 85   # Minimum desired Index Cache Hit Ratio percentage. An alert is triggered if below this.
+  table_growth_threshold_percent: 20 # Table growth percentage in the last week to trigger an alert.
+
+# --- Alert Cooldown Configuration ---
+# Wait time in minutes before sending the same type of alert again.
+cooldown:
+  alert_cooldown_minutes: 30
+  # File path to store the timestamp of the last sent alert.
+  last_alert_file: "/tmp/pg_monitor_last_alert.json"
+
+# --- Logging Configuration (for the script's own logs) ---
+logging:
+  log_file: "/var/log/pg_monitor/pg_monitor.log" # Full path to the script's log file.
+  log_level: "info" # Log level (e.g., "info", "debug", "error")
+
+# --- PostgreSQL Log Path (for security scans) ---
+postgresql_logs:
+  path: "/var/log/postgresql" # Full path to the PostgreSQL log directory (e.g., /var/log/postgresql or /var/lib/pgsql/data/log)
+  file_pattern: "postgresql-*.log" # Log file name pattern (e.g., 'postgresql-*.log' for rotated logs)
+
+# --- Feature Toggles ---
+features:
+  auto_kill_rogue_processes: false # Set to true to enable automatic killing of rogue queries
