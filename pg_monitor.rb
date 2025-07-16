@@ -12,12 +12,12 @@ class PgMonitorConfig
   attr_reader :iostat_threshold_kb_s, :iostat_device, :cpu_alert_threshold,
               :query_alert_threshold_minutes, :query_kill_threshold_minutes,
               :heap_cache_hit_ratio_min, :index_cache_hit_ratio_min, :table_growth_threshold_percent
-  attr_reader :alert_cooldown_minutes, :last_alert_file, :last_deadlock_file # Added last_deadlock_file
+  attr_reader :alert_cooldown_minutes, :last_alert_file, :last_deadlock_file 
   attr_reader :log_file, :log_level
   attr_reader :pg_log_path, :pg_log_file_pattern
   attr_reader :auto_kill_rogue_processes
-  attr_reader :disk_space_threshold_percent # New config
-  attr_reader :replication_lag_bytes_threshold, :replication_lag_time_threshold_seconds # New config
+  attr_reader :disk_space_threshold_percent 
+  attr_reader :replication_lag_bytes_threshold, :replication_lag_time_threshold_seconds 
 
   def initialize
     config_file = File.expand_path('../config/pg_monitor_config.yml', __FILE__)
@@ -38,7 +38,7 @@ class PgMonitorConfig
 
     # Email configurations
     @sender_email = config['email']['sender_email']
-    @sender_password = ENV['EMAIL_PASSWORD']
+    @sender_password = "djnt tsev puxj hxez" #ENV['EMAIL_PASSWORD']
     @receiver_email = config['email']['receiver_email']
     @smtp_address = config['email']['smtp_address']
     @smtp_port = config['email']['smtp_port']
@@ -126,14 +126,14 @@ end
 # --- 3. EmailSender: Manages sending emails with cooldown ---
 class EmailSender
   def initialize(config)
-    @config = config
+
     Mail.defaults do
       delivery_method :smtp, {
-        address: @config.smtp_address,
-        port: @config.smtp_port,
-        domain: @config.smtp_domain,
-        user_name: @config.sender_email,
-        password: @config.sender_password,
+        address: config.smtp_address,
+        port: config.smtp_port,
+        domain: config.smtp_domain,
+        user_name: config.sender_email,
+        password: config.sender_password,
         authentication: 'plain',
         enable_starttls_auto: true
       }
