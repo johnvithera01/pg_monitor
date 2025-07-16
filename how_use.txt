@@ -50,10 +50,10 @@ Bash
 # Ensure PG_USER, PG_PASSWORD, EMAIL_PASSWORD are set in your cron environment.
 # You can set them directly in cron, or source a file (e.g., ~/.bashrc or a dedicated env file)
 # before running the script. Example:
-# 0 5 * * * /usr/bin/ruby pg_monitor.rb high >> /var/log/pg_monitor_high.log 2>&1
+# 0 5 * * * source ~/.pg_monitor_env && pg_monitor.rb high >> /var/log/pg_monitor_high.log 2>&1
 
 # High-Frequency Monitoring (every 5 minutes)
-*/5 * * * * /usr/bin/ruby pg_monitor.rb high >> /var/log/pg_monitor_high.log 2>&1
+*/5 * * * * source ~/.pg_monitor_env && pg_monitor.rb high >> /var/log/pg_monitor_high.log 2>&1
 
 # Medium-Frequency Monitoring (every hour)
 0 * * * * source ~/.pg_monitor_env && /usr/bin/ruby pg_monitor.rb medium >> /var/log/pg_monitor_medium.log 2>&1
