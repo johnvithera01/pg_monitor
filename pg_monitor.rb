@@ -66,7 +66,7 @@ class PgMonitorConfig
     # Cooldown settings
     @alert_cooldown_minutes = config['cooldown']['alert_cooldown_minutes']
     @last_alert_file = config['cooldown']['last_alert_file']
-    @last_deadlock_file = config['cooldown']['last_deadlock_file'] # New config
+    @last_deadlock_file = config['cooldown']['last_deadlock_file'] 
     FileUtils.mkdir_p(File.dirname(@last_alert_file)) # Ensure directory exists
     FileUtils.mkdir_p(File.dirname(@last_deadlock_file)) # Ensure directory exists
 
