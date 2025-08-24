@@ -1,0 +1,5 @@
+# examples/prometheus.yml — exemplo de scrape do exporter do pg_monitor
+scrape_configs:
+- job_name: 'pg_monitor'
+static_configs:
+- targets: ['127.0.0.1:9394']

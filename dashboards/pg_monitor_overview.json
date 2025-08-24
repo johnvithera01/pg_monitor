@@ -1,0 +1,79 @@
+{
+"annotations": {"list": []},
+"editable": true,
+"fiscalYearStartMonth": 0,
+"graphTooltip": 0,
+"id": null,
+"links": [],
+"liveNow": false,
+"panels": [
+{
+"type": "stat",
+"title": "Alertas (total)",
+"gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+"targets": [
+{"expr": "sum(pgmon_alerts_total)", "refId": "A"}
+]
+},
+{
+"type": "stat",
+"title": "Idle in Tx",
+"gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+"targets": [
+{"expr": "pgmon_idle_in_tx", "refId": "A"}
+]
+},
+{
+"type": "stat",
+"title": "Queries lentas",
+"gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+"targets": [
+{"expr": "pgmon_slow_queries", "refId": "A"}
+]
+},
+{
+"type": "graph",
+"title": "Idade do XID mais antigo",
+"gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+"targets": [
+{"expr": "pgmon_oldest_xid_age", "refId": "A"}
+],
+"lines": true
+},
+{
+"type": "table",
+"title": "Crescimento por tabela (%)",
+"gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+"targets": [
+{"expr": "pgmon_table_growth_pct", "refId": "A"}
+],
+"options": {"showHeader": true}
+},
+{
+"type": "stat",
+"title": "Última execução (epoch)",
+"gridPos": {"h": 4, "w": 6, "x": 0, "y": 12},
+"targets": [
+{"expr": "pgmon_last_run_timestamp", "refId": "A"}
+]
+},
+{
+"type": "stat",
+"title": "Falhas de login (total)",
+"gridPos": {"h": 4, "w": 6, "x": 6, "y": 12},
+"targets": [
+{"expr": "sum(pgmon_failed_logins_total)", "refId": "A"}
+]
+}
+],
+"refresh": "30s",
+"schemaVersion": 38,
+"style": "dark",
+"tags": ["pg_monitor"],
+"templating": {"list": []},
+"time": {"from": "now-6h", "to": "now"},
+"timezone": "",
+"title": "pg_monitor — Overview",
+"version": 1,
+"weekStart": ""
+}
