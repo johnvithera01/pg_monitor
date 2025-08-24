@@ -1,66 +1,152 @@
 # pg_monitor
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
-## 🚀 Overview
-
-`pg_monitor` is a robust and intelligent Ruby script designed for **proactive PostgreSQL monitoring and advanced security**. It automates the detection of performance, security, and integrity issues, sending detailed, contextualized alerts via email, transforming reactive database management into a proactive strategy.
-
-## 🤔 Why This Script? The Pains It Solves
-
-As DBAs and SysAdmins, we've all been there:
-* **Unexpected performance spikes:** CPU and I/O soaring, with no immediate clue as to the cause.
-* **Stuck transactions and locks:** Bottlenecks that paralyze applications and demand urgent manual intervention.
-* **Silent security threats:** Failed login attempts buried in logs, difficult to track manually.
-* **Data corruption:** Every DBA's nightmare, with the integrity of your most valuable asset constantly at risk.
-* **Unexplained slowness:** Doubts about inefficient indexes, misconfigured `autovacuum`, or unoptimized queries.
-* **Sleepless nights:** Constant worry and alerts that arrive too late.
-
-`pg_monitor` was created to alleviate these pains by providing essential visibility, automation, and peace of mind.
-
-## ✨ Key Features
-
-This script offers multiple monitoring levels and advanced capabilities:
-
-* **Intelligent & Contextual Alerts (Level `high`):**
-    * Monitors CPU and I/O, correlating with active processes and problematic queries.
-    * Detects and alerts on excessive connections and `idle in transaction` sessions.
-    * Monitors `Heap Cache Hit Ratio` and `Index Cache Hit Ratio` for insights into memory efficiency.
-    * Checks transaction ID age to prevent the dreaded `Transaction ID wraparound`.
-* **Smart Security Surveillance (Levels `daily_log_scan` & `weekly_login_summary`):**
-    * **Daily Scan:** Analyzes PostgreSQL logs to detect and record *all* failed login attempts into a dedicated table in your database (`pg_monitor.failed_logins`).
-    * **Weekly Summary:** Sends an email consolidating weekly failed login attempts by date, user, and unique IP, offering a clear overview of your security posture.
-* **Data Corruption Defense (Level `corruption_test`):**
-    * Integrates with `pg_amcheck` to verify data and index integrity, alerting immediately if anomalies are detected.
-* **Optimization & Sanity Checks (Levels `medium` & `low`):**
-    * **`medium`:** Alerts on inefficient autovacuum and suggests `VACUUM ANALYZE` for problematic tables.
-    * **`low`:** Identifies unused/redundant indexes and the top 10 slowest queries in your database.
-* **Strategic Automation:**
-    * Ability to identify and **automatically terminate** processes that exceed predefined limits (e.g., long-running transactions), preventing database crashes. (Requires `query_kill_threshold_minutes` in config and `features.auto_kill_rogue_processes` to be `true`).
-* **Table Size History (Level `table_size_history`):**
-    * Saves a historical record of table sizes to track growth and plan optimizations, alerting on significant growth (configured via `table_growth_threshold_percent`).
-* **Alert Cooldown:** Prevents alert floods by implementing a cooldown period before sending repeat alerts of the same type.
-
-## ⚙️ Prerequisites
-
-To use `pg_monitor`, you will need:
-
-* **Ruby:** Version 2.5 or higher.
-* **Ruby Gems:** `pg`, `json`, `time`, `mail`, `fileutils`, `yaml`. Install them via Bundler or manually:
-    ```bash
-    gem install pg json mail fileutils yaml
-    ```
-* **PostgreSQL Database Access:** A user with appropriate permissions.
-* **Operating System Access:** For `mpstat` (for CPU) and `iostat` (for I/O), which typically come with the `sysstat` package (install if necessary: `sudo apt-get install sysstat` on Debian/Ubuntu).
-* **`pg_amcheck`:** Tool for corruption verification (usually part of `postgresql-contrib` or installed separately).
-* **SMTP Server:** For sending emails (configured via `pg_monitor_config.yml` and environment variables).
+Lightweight **PostgreSQL monitoring** tool written in Ruby, with support for **Prometheus metrics** and ready-to-use **Grafana dashboards**.  
+This project focuses on detecting common PostgreSQL issues and making observability simple.
 
 ---
 
-## 🚀 Installation & Configuration
+## 🚀 Features
 
-### 1. Clone the Repository
+- Collects critical PostgreSQL metrics:
+  - Idle in transaction sessions
+  - Slow queries
+  - Transaction ID age (wraparound prevention)
+  - Abnormal table growth
+  - Failed login attempts
+- Exposes metrics on `/metrics` endpoint (Prometheus format)
+- Ready-to-import Grafana dashboard (`dashboards/pg_monitor_overview.json`)
+- Easy configuration via YAML or environment variables
+- Prepared for external integrations (e.g., Protheus ERP)
 
+---
+
+## 📦 Installation
+
+### Requirements
+- Ruby >= 2.7
+- Bundler
+- PostgreSQL client (`libpq`)
+- Prometheus (to scrape metrics)
+- Grafana (to visualize dashboards)
+
+### Setup
+
+Clone the repository and install dependencies:
 ```bash
-git clone [https://github.com/YourUsername/pg_monitor.git](https://github.com/YourUsername/pg_monitor.git) # Change 'YourUsername' to your actual GitHub username
+git clone https://github.com/johnvithera01/pg_monitor.git
 cd pg_monitor
+bundle install
+```
+
+---
+
+## ▶️ Usage
+
+### Start the Exporter
+Run Rackup to expose the `/metrics` endpoint:
+```bash
+bundle exec rackup -p 9394 -o 0.0.0.0
+```
+
+Test it:
+```bash
+curl http://localhost:9394/metrics
+```
+
+You should see metrics being returned.
+
+---
+
+## 📊 Prometheus Integration
+
+Update your `prometheus.yml` configuration:
+
+```yaml
+scrape_configs:
+  - job_name: 'pg_monitor'
+    static_configs:
+      - targets: ['localhost:9394']
+```
+
+Start Prometheus:
+```bash
+prometheus --config.file=prometheus.yml
+```
+
+Now Prometheus will scrape data from `pg_monitor`.
+
+---
+
+## 📈 Grafana Integration
+
+1. **Install Grafana**  
+   - macOS:  
+     ```bash
+     brew install grafana
+     brew services start grafana
+     ```  
+   - Open: [http://localhost:3000](http://localhost:3000)  
+     (default user/password: `admin` / `admin`)
+
+2. **Add Prometheus as a Data Source**  
+   - In Grafana: **Connections → Data Sources → Add data source → Prometheus**  
+   - URL: `http://localhost:9090` (adjust if your Prometheus runs elsewhere)  
+   - Click **Save & Test**
+
+3. **Import the Dashboard**  
+   - In Grafana: **+ (Create) → Import**  
+   - Click **Upload JSON file**  
+   - Select `dashboards/pg_monitor_overview.json` from this repo  
+   - Choose your Prometheus data source  
+   - Click **Import**
+
+🎉 Done! You’ll now see `pg_monitor` dashboards in Grafana.
+
+---
+
+## ⚙️ Configuration
+
+You can configure `pg_monitor` via a YAML file or environment variables.
+
+Example `config/pg_monitor.yml`:
+```yaml
+postgres:
+  host: localhost
+  port: 5432
+  db: postgres
+  user: postgres
+  pass: postgres
+
+thresholds:
+  idle_in_tx_minutes: 5
+  slow_query_ms: 2000
+  xid_age_warning: 150000000
+  xid_age_critical: 190000000
+  table_growth_pct_warning: 20
+  table_growth_pct_critical: 40
+```
+
+---
+
+## 📅 Roadmap
+
+- [x] Expose Prometheus-compatible metrics
+- [x] Grafana dashboard
+- [ ] Intelligent alerts with severity levels
+- [ ] Executive reports (PDF/HTML)
+- [ ] Auto-healing (terminate rogue queries, run VACUUM automatically)
+- [ ] Security module (login failure detection & analysis)
+- [ ] SaaS integration
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!  
+Feel free to open an issue or submit a pull request with improvements.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
