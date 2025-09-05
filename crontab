@@ -1,0 +1,27 @@
+# crontab
+# pg_monitor cron schedule
+# Format: minute hour day month weekday command
+
+# High frequency monitoring - every 2 minutes
+*/2 * * * * cd /app && /usr/local/bin/ruby pg_monitor.rb high >> /var/log/pg_monitor/cron.log 2>&1
+
+# Medium frequency monitoring - every 30 minutes
+*/30 * * * * cd /app && /usr/local/bin/ruby pg_monitor.rb medium >> /var/log/pg_monitor/cron.log 2>&1
+
+# Low frequency monitoring - every 6 hours
+0 */6 * * * cd /app && /usr/local/bin/ruby pg_monitor.rb low >> /var/log/pg_monitor/cron.log 2>&1
+
+# Security monitoring - daily at 02:00
+0 2 * * * cd /app && /usr/local/bin/ruby pg_monitor.rb daily_log_scan >> /var/log/pg_monitor/cron.log 2>&1
+
+# Weekly security summary - Mondays at 06:00
+0 6 * * 1 cd /app && /usr/local/bin/ruby pg_monitor.rb weekly_login_summary >> /var/log/pg_monitor/cron.log 2>&1
+
+# Table size history - daily at 01:00
+0 1 * * * cd /app && /usr/local/bin/ruby pg_monitor.rb table_size_history >> /var/log/pg_monitor/cron.log 2>&1
+
+# Corruption test - weekly on Sundays at 04:00
+0 4 * * 0 cd /app && /usr/local/bin/ruby pg_monitor.rb corruption_test >> /var/log/pg_monitor/cron.log 2>&1
+
+# Log rotation - monthly
+0 0 1 * * find /var/log/pg_monitor -name "*.log" -mtime +30 -delete

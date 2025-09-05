@@ -1,0 +1,63 @@
+# docker-compose.override.yml.example
+# Copy this file to docker-compose.override.yml and customize for your environment
+
+version: '3.8'
+
+services:
+  pg_monitor:
+    # Override environment variables
+    environment:
+      - CUSTOM_MONITORING_INTERVAL=60
+      - ALERT_CHANNELS=email,slack
+    
+    # Mount additional volumes
+    volumes:
+      # Mount your actual PostgreSQL logs
+      - /var/lib/postgresql/15/main/log:/var/lib/postgresql/data/log:ro
+      # Mount custom configuration
+      - ./config/custom_config.yml:/app/config/pg_monitor_config.yml:ro
+    
+    # Add resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres:
+    # Use your specific PostgreSQL version
+    image: postgres:15-alpine
+    
+    # Mount custom PostgreSQL configuration
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./config/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    
+    # Custom PostgreSQL settings
+    command: 
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_statement=all
+      - -c
+      - log_min_duration_statement=1000
+
+  # Add additional services
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - monitoring
+
+volumes:
+  postgres_data:
+    driver: local

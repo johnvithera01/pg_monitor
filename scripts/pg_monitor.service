@@ -1,0 +1,23 @@
+# scripts/pg_monitor.service
+[Unit]
+Description=PostgreSQL Monitor Service
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=pgmonitor
+Group=pgmonitor
+WorkingDirectory=/opt/pg_monitor
+Environment=PG_USER=postgres
+Environment=PG_PASSWORD=your_password
+Environment=EMAIL_PASSWORD=your_email_password
+ExecStart=/usr/local/bin/bundle exec puma -C config/puma.rb
+ExecReload=/bin/kill -USR2 $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

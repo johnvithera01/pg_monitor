@@ -1,0 +1,25 @@
+# Gemfile
+source 'https://rubygems.org'
+
+gem 'pg'
+gem 'prometheus-client'
+gem 'rack', '~> 2.2'
+gem 'puma'
+gem 'oauth'
+gem 'json'
+gem 'mail'
+
+group :development, :test do
+  gem 'rspec', '~> 3.12'
+  gem 'rspec-mocks'
+  gem 'simplecov', require: false
+  gem 'rubocop', require: false
+  gem 'rubocop-rspec', require: false
+  gem 'factory_bot'
+  gem 'webmock'
+end
+
+group :development do
+  gem 'pry'
+  gem 'pry-byebug'
+end

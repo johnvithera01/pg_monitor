@@ -38,7 +38,7 @@ class PgMonitorConfig
 
     # Email configurations
     @sender_email = config['email']['sender_email']
-    @sender_password = "djnt tsev puxj hxez" #ENV['EMAIL_PASSWORD']
+    @sender_password = ENV['EMAIL_PASSWORD']
     @receiver_email = config['email']['receiver_email']
     @smtp_address = config['email']['smtp_address']
     @smtp_port = config['email']['smtp_port']
