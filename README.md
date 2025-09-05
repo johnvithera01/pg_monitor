@@ -75,6 +75,20 @@ To use `pg_monitor`, you will need:
 
 ### ⚡ One-Line Install
 
+---
+
+## 📦 Installation
+
+### Requirements
+- Ruby >= 2.7
+- Bundler
+- PostgreSQL client (`libpq`)
+- Prometheus (to scrape metrics)
+- Grafana (to visualize dashboards)
+
+### Setup
+
+Clone the repository and install dependencies:
 ```bash
 # Quick setup with interactive script
 curl -sSL https://raw.githubusercontent.com/johnvithera01/pg_monitor/main/quick-start.sh | bash
