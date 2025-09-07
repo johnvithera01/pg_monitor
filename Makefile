@@ -94,3 +94,16 @@ backup-config: ## Backup configuration
 # Database operations
 db-test-connection: ## Test database connection
 	ruby -e "require_relative 'lib/pg_monitor'; config = PgMonitor::Config.new; conn = PgMonitor::Connection.new(config); conn.connect; puts 'Connection successful!'; conn.close"
+
+# Testing targets
+test-all: ## Run all tests
+	./test_runner.sh
+
+test-scenarios: ## Run test scenarios
+	./scripts/test_scenarios.sh
+
+test-integration: ## Run integration tests
+	bundle exec rspec spec/integration/
+
+test-quick: ## Quick test (syntax and basic functionality)
+	ruby -c pg_monitor.rb && ruby -c lib/pg_monitor.rb && echo "✅ Syntax OK"

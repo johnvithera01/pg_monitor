@@ -4,6 +4,7 @@ require 'time'
 require 'mail'
 require 'fileutils'
 require 'yaml'
+require_relative 'lib/pg_monitor'
 
 # --- 1. PgMonitorConfig: Handles loading configuration ---
 class PgMonitorConfig

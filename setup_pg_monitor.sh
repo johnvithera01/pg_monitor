@@ -105,7 +105,7 @@ if [ -f "${PG_MONITOR_BASE_DIR}/pg_monitor_config.yml" ]; then
 elif [ ! -f "$PG_MONITOR_CONFIG_FILE" ]; then
     echo "Erro: 'pg_monitor_config.yml' não encontrado nem na raiz nem em ${CONFIG_DIR}/."
     echo "Por favor, crie um arquivo 'pg_monitor_config.yml' em ${CONFIG_DIR}/ com suas configurações."
-    echo "Você pode usar 'pg_monitor_confi.yml.sample' como modelo."
+    echo "Você pode usar 'pg_monitor_config.yml.sample' como modelo."
     exit 1
 else
     echo "pg_monitor_config.yml já está em ${CONFIG_DIR}/."

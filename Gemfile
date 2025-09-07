@@ -18,6 +18,7 @@ group :development, :test do
   gem 'simplecov', '~> 0.22'
   gem 'factory_bot', '~> 6.2'
   gem 'timecop', '~> 0.9'
+  gem 'webmock', '~> 3.18'
 end
 
 group :development do

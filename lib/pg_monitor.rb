@@ -3,11 +3,12 @@ require_relative 'pg_monitor/config'
 require_relative 'pg_monitor/connection'
 require_relative 'pg_monitor/email_sender'
 require_relative 'pg_monitor/metrics'
+require_relative 'pg_monitor/logger'
+require_relative 'pg_monitor/alert_sink'
 require_relative 'pg_monitor/collectors/base_collector'
 require_relative 'pg_monitor/collectors/critical_metrics'
 require_relative 'pg_monitor/collectors/security_metrics'
 require_relative 'pg_monitor/collectors/performance_metrics'
-require_relative 'pg_monitor/logger'
 
 module PgMonitor
   VERSION = '2.0.0'
