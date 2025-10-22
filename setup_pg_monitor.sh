@@ -18,7 +18,7 @@ echo "========================================"
 echo "Diretório: ${PG_MONITOR_BASE_DIR}"
 echo ""
 echo "Este script irá:"
-echo "  ✅ Instalar rbenv e Ruby 3.2.0 (sem precisar de root)"
+echo "  ✅ Instalar Ruby do sistema (instalação rápida)"
 echo "  ✅ Configurar tudo automaticamente"
 echo "  ✅ Testar a instalação"
 echo "  ✅ Configurar cron jobs (opcional)"
@@ -108,44 +108,24 @@ echo "✅ Dependências do sistema instaladas"
 
 install_package "sysstat" "mpstat" # Para mpstat e iostat
 
-# Instalar rbenv e ruby-build
-if ! command_exists "rbenv"; then
-    echo "📦 Instalando rbenv..."
-    git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-    echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-    
-    # Instalar ruby-build
-    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-    
-    # Carregar rbenv na sessão atual
-    export PATH="$HOME/.rbenv/bin:$PATH"
-    eval "$(rbenv init -)"
-    
-    echo "✅ rbenv instalado"
+# Instalar Ruby do sistema (muito mais rápido que compilar)
+if ! command_exists "ruby"; then
+    echo "📦 Instalando Ruby do sistema..."
+    if [ "$DISTRO" == "debian" ]; then
+        sudo apt-get install -y ruby-full ruby-dev
+    elif [ "$DISTRO" == "redhat" ]; then
+        sudo yum install -y ruby ruby-devel
+    fi
+    echo "✅ Ruby instalado"
 else
-    echo "✅ rbenv já está instalado"
-    export PATH="$HOME/.rbenv/bin:$PATH"
-    eval "$(rbenv init -)"
-fi
-
-# Instalar Ruby via rbenv
-RUBY_VERSION="3.2.0"
-if ! rbenv versions | grep -q "$RUBY_VERSION"; then
-    echo "📦 Instalando Ruby $RUBY_VERSION via rbenv..."
-    rbenv install $RUBY_VERSION
-    rbenv global $RUBY_VERSION
-    echo "✅ Ruby $RUBY_VERSION instalado"
-else
+    RUBY_VERSION=$(ruby -v | awk '{print $2}' | cut -d'p' -f1)
     echo "✅ Ruby $RUBY_VERSION já está instalado"
-    rbenv global $RUBY_VERSION
 fi
 
 # Instalar bundler
 if ! command_exists "bundle"; then
     echo "📦 Instalando bundler..."
-    gem install bundler
-    rbenv rehash
+    sudo gem install bundler
     echo "✅ Bundler instalado"
 else
     echo "✅ Bundler já está instalado"
