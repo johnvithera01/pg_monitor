@@ -145,8 +145,8 @@ if ! rbenv versions 2>/dev/null | grep -q "$RUBY_VERSION"; then
     export RUBY_CONFIGURE_OPTS="--disable-install-doc --disable-install-rdoc"
     export MAKE_OPTS="-j$(nproc)"
     
-    # Instalar Ruby
-    rbenv install $RUBY_VERSION
+    # Instalar Ruby (forçando uso de todos os cores)
+    MAKE_OPTS="-j$(nproc)" rbenv install $RUBY_VERSION
     rbenv global $RUBY_VERSION
     rbenv rehash
     
