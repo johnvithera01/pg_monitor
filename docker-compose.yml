@@ -1,4 +1,6 @@
 # docker-compose.yml
+# Configuração simplificada: apenas pg_monitor
+# PostgreSQL deve estar instalado externamente no servidor
 version: '3.8'
 
 services:
@@ -15,13 +17,9 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./logs:/var/log/pg_monitor
-      - /var/lib/postgresql/data/log:/var/lib/postgresql/data/log:ro
     ports:
       - "9394:9394"
-    networks:
-      - monitoring
-    depends_on:
-      - postgres
+    network_mode: "host"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9394/health"]
       interval: 30s
@@ -40,68 +38,6 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./logs:/var/log/pg_monitor
-      - /var/lib/postgresql/data/log:/var/lib/postgresql/data/log:ro
       - ./crontab:/etc/crontabs/pgmonitor:ro
     command: ["crond", "-f", "-l", "2"]
-    networks:
-      - monitoring
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres_monitored
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB:-testdb}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./postgres.conf:/etc/postgresql/postgresql.conf:ro
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-    ports:
-      - "5432:5432"
-    networks:
-      - monitoring
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    volumes:
-      - ./examples/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    networks:
-      - monitoring
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./dashboards:/etc/grafana/provisioning/dashboards:ro
-    ports:
-      - "3000:3000"
-    networks:
-      - monitoring
-
-volumes:
-  postgres_data:
-  prometheus_data:
-  grafana_data:
-
-networks:
-  monitoring:
-    driver: bridge
+    network_mode: "host"

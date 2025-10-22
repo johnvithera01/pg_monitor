@@ -79,6 +79,13 @@ To use `pg_monitor`, you will need:
 
 ## 📦 Installation
 
+**⚠️ IMPORTANTE:** pg_monitor é uma ferramenta de **monitoramento**. PostgreSQL deve estar **instalado externamente**.
+
+### 📚 Guias de Instalação
+
+- 🐳 **[Instalação Docker](DOCKER_INSTALL.md)** - Recomendado para ambientes containerizados
+- 💻 **[Instalação Tradicional](README_INSTALACAO.md)** - Para instalação direta no servidor
+
 ### Requirements
 - Ruby >= 2.7
 - Bundler

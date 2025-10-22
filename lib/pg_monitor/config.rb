@@ -71,6 +71,7 @@ module PgMonitor
     end
 
     def load_database_config(db_config)
+      db_config ||= {}
       @db_host = db_config['host'] || 'localhost'
       @db_port = db_config['port'] || 5432
       @db_name = db_config['name'] || 'postgres'
@@ -79,6 +80,7 @@ module PgMonitor
     end
 
     def load_email_config(email_config)
+      email_config ||= {}
       @sender_email = email_config['sender_email']
       @sender_password = ENV['EMAIL_PASSWORD']
       @receiver_email = email_config['receiver_email']
@@ -88,6 +90,7 @@ module PgMonitor
     end
 
     def load_thresholds_config(thresholds)
+      thresholds ||= {}
       @iostat_threshold_kb_s = thresholds['iostat_threshold_kb_s'] || 50000
       @iostat_device = thresholds['iostat_device'] || 'vda'
       @cpu_alert_threshold = thresholds['cpu_threshold_percent'] || 80
@@ -102,6 +105,7 @@ module PgMonitor
     end
 
     def load_cooldown_config(cooldown)
+      cooldown ||= {}
       @alert_cooldown_minutes = cooldown['alert_cooldown_minutes'] || 60
       @last_alert_file = cooldown['last_alert_file'] || '/tmp/pg_monitor_last_alerts.json'
       @last_deadlock_file = cooldown['last_deadlock_file'] || '/tmp/pg_monitor_last_deadlock_count.json'
@@ -112,6 +116,7 @@ module PgMonitor
     end
 
     def load_logging_config(logging)
+      logging ||= {}
       @log_file = logging['log_file'] || '/var/log/pg_monitor/pg_monitor.log'
       @log_level = logging['log_level'] || 'info'
       
@@ -120,11 +125,13 @@ module PgMonitor
     end
 
     def load_postgresql_logs_config(pg_logs)
+      pg_logs ||= {}
       @pg_log_path = pg_logs['path']
       @pg_log_file_pattern = pg_logs['file_pattern'] || 'postgresql-*.log'
     end
 
     def load_features_config(features)
+      features ||= {}
       @auto_kill_rogue_processes = features['auto_kill_rogue_processes'] || false
     end
 

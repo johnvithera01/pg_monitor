@@ -55,10 +55,12 @@ install_package() {
 install_package "ruby" "ruby"
 install_package "bundler" "bundle" # Bundler é uma gem, mas é bom tê-lo pré-instalado para evitar problemas
 install_package "sysstat" "mpstat" # Para mpstat e iostat
-install_package "postgresql-client" "psql" # Para comandos psql
-install_package "postgresql-contrib" "pg_amcheck" # Para pg_amcheck
+# install_package "postgresql-client" "psql" # REMOVIDO: PostgreSQL deve estar instalado externamente
+# install_package "postgresql-contrib" "pg_amcheck" # REMOVIDO: PostgreSQL deve estar instalado externamente
 
 echo "Dependências do sistema verificadas/instaladas."
+echo "NOTA: Este script assume que PostgreSQL já está instalado no sistema."
+echo "      Se PostgreSQL não estiver instalado, instale-o manualmente antes de continuar."
 
 # --- 2. Instalar Ruby Gems ---
 echo -e "\n2. Instalando Ruby Gems (dependências do projeto)..."

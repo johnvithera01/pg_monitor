@@ -111,10 +111,106 @@ RSpec.describe PgMonitor::Config do
     end
   end
 
-  describe '#valid?' do
-    it 'returns true for valid configuration' do
+  describe '#validation_errors' do
+    it 'returns empty array for valid configuration' do
       config = described_class.new(config_file.path)
-      expect(config).to be_valid
+      expect(config.validation_errors).to be_empty
+    end
+
+    it 'returns validation errors for invalid configuration' do
+      invalid_config = valid_config.dup
+      invalid_config['thresholds']['cpu_threshold_percent'] = 150
+      invalid_config['thresholds']['heap_cache_hit_ratio_min'] = 150
+
+      invalid_config_file = Tempfile.new(['invalid_config', '.yml'])
+      invalid_config_file.write(invalid_config.to_yaml)
+      invalid_config_file.close
+
+      begin
+        config = described_class.new(invalid_config_file.path)
+        expect(config.validation_errors.size).to eq(2)
+        expect(config.validation_errors).to include(/CPU threshold must be between 1 and 100/)
+        expect(config.validation_errors).to include(/Heap cache hit ratio must be between 1 and 100/)
+      ensure
+        invalid_config_file.unlink
+      end
     end
   end
-end
+
+  describe 'email configuration validation' do
+    it 'validates sender email is required' do
+      config_no_email = valid_config.dup
+      config_no_email['email']['sender_email'] = ''
+
+      config_file_no_email = Tempfile.new(['config_no_email', '.yml'])
+      config_file_no_email.write(config_no_email.to_yaml)
+      config_file_no_email.close
+
+      begin
+        config = described_class.new(config_file_no_email.path)
+        expect(config.valid?).to eq(false)
+        expect(config.validation_errors).to include(/Sender email is required/)
+      ensure
+        config_file_no_email.unlink
+      end
+    end
+
+    it 'validates receiver email is required' do
+      config_no_email = valid_config.dup
+      config_no_email['email']['receiver_email'] = ''
+
+      config_file_no_email = Tempfile.new(['config_no_email', '.yml'])
+      config_file_no_email.write(config_no_email.to_yaml)
+      config_file_no_email.close
+
+      begin
+        config = described_class.new(config_file_no_email.path)
+        expect(config.valid?).to eq(false)
+        expect(config.validation_errors).to include(/Receiver email is required/)
+      ensure
+        config_file_no_email.unlink
+      end
+    end
+  end
+
+  describe 'path validation' do
+    it 'validates PostgreSQL log path exists' do
+      config_no_log_path = valid_config.dup
+      config_no_log_path['postgresql_logs']['path'] = '/nonexistent/path'
+
+      config_file_no_log_path = Tempfile.new(['config_no_log_path', '.yml'])
+      config_file_no_log_path.write(config_no_log_path.to_yaml)
+      config_file_no_log_path.close
+
+      begin
+        config = described_class.new(config_file_no_log_path.path)
+        expect(config.valid?).to eq(false)
+        expect(config.validation_errors).to include(/PostgreSQL log path does not exist/)
+      ensure
+        config_file_no_log_path.unlink
+      end
+    end
+  end
+
+  describe 'default values' do
+    it 'uses default values when not specified in config' do
+      minimal_config = {
+        'database' => { 'host' => 'localhost', 'port' => 5432, 'name' => 'testdb' },
+        'email' => { 'sender_email' => 'sender@example.com', 'receiver_email' => 'receiver@example.com' }
+      }
+
+      minimal_config_file = Tempfile.new(['minimal_config', '.yml'])
+      minimal_config_file.write(minimal_config.to_yaml)
+      minimal_config_file.close
+
+      begin
+        config = described_class.new(minimal_config_file.path)
+        expect(config.cpu_alert_threshold).to eq(80) # default
+        expect(config.log_level).to eq('info') # default
+        expect(config.auto_kill_rogue_processes).to eq(false) # default
+        expect(config.smtp_address).to eq('smtp.gmail.com') # default
+      ensure
+        minimal_config_file.unlink
+      end
+    end
+  end

@@ -35,8 +35,12 @@ module PgMonitor
           run_performance_monitoring
         when 'low'
           run_maintenance_monitoring
-        when 'security'
+        when 'daily_log_scan', 'weekly_login_summary'
           run_security_monitoring
+        when 'table_size_history'
+          run_table_size_history
+        when 'corruption_test'
+          run_corruption_test
         else
           @logger.error("Unknown frequency level: #{frequency_level}")
           return false
@@ -67,13 +71,27 @@ module PgMonitor
     end
 
     def run_maintenance_monitoring
-      collector = Collectors::MaintenanceMetrics.new(@connection, @config, @alert_messages)
+      @logger.info("Running maintenance monitoring (using performance metrics)")
+      # Using PerformanceMetrics for now - TODO: Create dedicated MaintenanceMetrics
+      collector = Collectors::PerformanceMetrics.new(@connection, @config, @alert_messages)
       collector.monitor
     end
 
     def run_security_monitoring
       collector = Collectors::SecurityMetrics.new(@connection, @config, @alert_messages)
       collector.monitor
+    end
+
+    def run_table_size_history
+      @logger.info("Running table size history tracking")
+      # TODO: Implement table size history tracking
+      @logger.warn("Table size history tracking not yet implemented in new structure")
+    end
+
+    def run_corruption_test
+      @logger.info("Running corruption test")
+      # TODO: Implement corruption test
+      @logger.warn("Corruption test not yet implemented in new structure")
     end
 
     def send_alerts

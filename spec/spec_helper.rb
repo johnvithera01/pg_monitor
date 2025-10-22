@@ -9,14 +9,15 @@ require 'rspec'
 require 'factory_bot'
 require 'timecop'
 require_relative '../lib/pg_monitor'
+require_relative 'support/factory_bot'
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
-  
+
   config.before(:suite) do
     FactoryBot.find_definitions
   end
-  
+
   config.after(:each) do
     Timecop.return
   end
