@@ -52,8 +52,12 @@ read -sp "🔹 Senha do PostgreSQL: " PG_PASSWORD
 echo ""
 read_with_default "🔹 Email remetente (Gmail)" "monitor.postgresql@gmail.com" SENDER_EMAIL
 read_with_default "🔹 Email destinatário" "admin@example.com" RECEIVER_EMAIL
-read -sp "🔹 Senha App do Gmail: " EMAIL_PASSWORD
+read -sp "🔹 Senha App do Gmail (sem espaços): " EMAIL_PASSWORD_RAW
 echo ""
+
+# Remover espaços da senha do Gmail
+EMAIL_PASSWORD=$(echo "$EMAIL_PASSWORD_RAW" | tr -d ' ')
+
 echo ""
 
 # --- 1. Verificar e instalar dependências do sistema ---
