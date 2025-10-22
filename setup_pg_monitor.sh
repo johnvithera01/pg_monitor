@@ -99,17 +99,15 @@ install_package() {
 echo "📦 Instalando dependências do sistema..."
 if [ "$DISTRO" == "debian" ]; then
     sudo apt-get update
-    sudo apt-get install -y git curl build-essential libssl-dev libreadline-dev \
-        zlib1g-dev libyaml-dev libffi-dev libgdbm-dev libncurses5-dev \
-        autoconf bison libgdbm-dev libgdbm-compat-dev
+    sudo apt-get install -y git curl autoconf bison build-essential libssl-dev \
+        libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev \
+        libffi-dev libgdbm-dev libdb-dev uuid-dev libreadline-dev sysstat
 elif [ "$DISTRO" == "redhat" ]; then
     sudo yum install -y git curl gcc make openssl-devel readline-devel \
         zlib-devel libyaml-devel libffi-devel gdbm-devel ncurses-devel \
-        autoconf bison
+        autoconf bison gmp-devel libdb-devel libuuid-devel sysstat
 fi
 echo "✅ Dependências do sistema instaladas"
-
-install_package "sysstat" "mpstat" # Para mpstat e iostat
 
 # Instalar rbenv e ruby-build
 if ! command_exists "rbenv"; then
