@@ -183,6 +183,15 @@ if [ ! -f "Gemfile" ]; then
     exit 1
 fi
 
+# Garantir que rbenv está carregado
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
+rbenv shell 3.2.2
+
+# Verificar versão do Ruby
+echo "🔍 Usando Ruby: $(ruby -v)"
+echo "🔍 Usando Bundler: $(bundle -v)"
+
 bundle install
 if [ $? -ne 0 ]; then
     echo "❌ Falha ao instalar gems. Verifique Ruby/Bundler."
