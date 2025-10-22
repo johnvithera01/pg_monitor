@@ -111,58 +111,62 @@ echo "✅ Dependências do sistema instaladas"
 
 install_package "sysstat" "mpstat" # Para mpstat e iostat
 
-# Instalar Ruby usando ruby-install (binários pré-compilados quando disponível)
-if ! command_exists "ruby" || ! ruby -v | grep -q "3\.[0-9]"; then
-    echo "📦 Instalando Ruby 3.2.2..."
+# Instalar rbenv e ruby-build
+if ! command_exists "rbenv"; then
+    echo "📦 Instalando rbenv..."
+    git clone https://github.com/rbenv/rbenv.git ~/.rbenv
     
-    # Instalar ruby-install se não existir
-    if ! command_exists "ruby-install"; then
-        echo "📥 Baixando ruby-install..."
-        cd /tmp
-        wget -O ruby-install-0.9.3.tar.gz https://github.com/postmodern/ruby-install/releases/download/v0.9.3/ruby-install-0.9.3.tar.gz
-        tar -xzvf ruby-install-0.9.3.tar.gz
-        cd ruby-install-0.9.3/
-        sudo make install
-        cd ~
-        echo "✅ ruby-install instalado"
-    fi
+    # Compilar rbenv para melhor performance
+    cd ~/.rbenv && src/configure && make -C src
     
-    # Instalar Ruby 3.2.2 em ~/.rubies
-    echo "📦 Instalando Ruby 3.2.2 (usando binários quando disponível)..."
-    ruby-install --no-reinstall ruby 3.2.2 -- --disable-install-doc
+    # Adicionar ao PATH
+    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+    echo 'eval "$(rbenv init - bash)"' >> ~/.bashrc
     
-    # Configurar chruby para usar o Ruby instalado
-    if [ ! -f /usr/local/share/chruby/chruby.sh ]; then
-        echo "📥 Instalando chruby..."
-        cd /tmp
-        wget -O chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.3.9.tar.gz
-        tar -xzvf chruby-0.3.9.tar.gz
-        cd chruby-0.3.9/
-        sudo make install
-        cd ~
-    fi
+    # Carregar rbenv na sessão atual
+    export PATH="$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init - bash)"
     
-    # Adicionar chruby ao bashrc
-    if ! grep -q "chruby.sh" ~/.bashrc; then
-        echo 'source /usr/local/share/chruby/chruby.sh' >> ~/.bashrc
-        echo 'source /usr/local/share/chruby/auto.sh' >> ~/.bashrc
-        echo 'chruby ruby-3.2.2' >> ~/.bashrc
-    fi
+    # Instalar ruby-build
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
     
-    # Carregar chruby na sessão atual
-    source /usr/local/share/chruby/chruby.sh
-    chruby ruby-3.2.2
-    
-    echo "✅ Ruby 3.2.2 instalado"
+    echo "✅ rbenv instalado"
 else
-    RUBY_VERSION=$(ruby -v | awk '{print $2}' | cut -d'p' -f1)
-    echo "✅ Ruby $RUBY_VERSION já está instalado"
+    echo "✅ rbenv já está instalado"
+    export PATH="$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init - bash)"
 fi
+
+# Instalar Ruby via rbenv
+RUBY_VERSION="3.2.2"
+if ! rbenv versions 2>/dev/null | grep -q "$RUBY_VERSION"; then
+    echo "📦 Instalando Ruby $RUBY_VERSION via rbenv..."
+    echo "⏱️  Isso pode demorar 2-5 minutos..."
+    
+    # Configurar para compilação mais rápida
+    export RUBY_CONFIGURE_OPTS="--disable-install-doc --disable-install-rdoc"
+    export MAKE_OPTS="-j$(nproc)"
+    
+    # Instalar Ruby
+    rbenv install $RUBY_VERSION
+    rbenv global $RUBY_VERSION
+    rbenv rehash
+    
+    echo "✅ Ruby $RUBY_VERSION instalado"
+else
+    echo "✅ Ruby $RUBY_VERSION já está instalado"
+    rbenv global $RUBY_VERSION
+    rbenv rehash
+fi
+
+# Garantir que estamos usando o Ruby correto
+eval "$(rbenv init - bash)"
 
 # Instalar bundler
 if ! command_exists "bundle"; then
     echo "📦 Instalando bundler..."
     gem install bundler --no-document
+    rbenv rehash
     echo "✅ Bundler instalado"
 else
     echo "✅ Bundler já está instalado"
