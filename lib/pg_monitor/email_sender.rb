@@ -111,13 +111,16 @@ module PgMonitor
     private
 
     def setup_mail_configuration
+      # Save config to local variable to use inside block
+      config = @config
+      
       Mail.defaults do
         delivery_method :smtp, {
-          address: @config.smtp_address,
-          port: @config.smtp_port,
-          domain: @config.smtp_domain,
-          user_name: @config.sender_email,
-          password: @config.sender_password,
+          address: config.smtp_address,
+          port: config.smtp_port,
+          domain: config.smtp_domain,
+          user_name: config.sender_email,
+          password: config.sender_password,
           authentication: 'plain',
           enable_starttls_auto: true
         }
