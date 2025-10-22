@@ -13,18 +13,18 @@ PG_MONITOR_CONFIG_FILE="${CONFIG_DIR}/pg_monitor_config.yml"
 PG_MONITOR_RB_PATH="${PG_MONITOR_BASE_DIR}/pg_monitor.rb"
 ENV_FILE="${PG_MONITOR_BASE_DIR}/.env"
 
-echo "🚀 pg_monitor v2.0 - Setup Automático"
-echo "========================================"
+echo "🚀 pg_monitor v2.0 - Setup Automático COMPLETO"
+echo "================================================"
 echo "Diretório: ${PG_MONITOR_BASE_DIR}"
 echo ""
-echo "📋 Pré-requisito: Ruby deve estar instalado"
-echo "   Se não tiver: sudo apt-get install -y ruby-full ruby-dev"
-echo ""
-echo "Este script irá:"
-echo "  ✅ Instalar gems no diretório do usuário (sem root)"
-echo "  ✅ Configurar tudo automaticamente"
+echo "Este script irá fazer TUDO automaticamente:"
+echo "  ✅ Instalar Ruby 3.2.2 (rápido, usando ruby-install)"
+echo "  ✅ Instalar todas as gems"
+echo "  ✅ Configurar .env e YAML"
 echo "  ✅ Testar a instalação"
 echo "  ✅ Configurar cron jobs (opcional)"
+echo ""
+echo "⏱️  Tempo estimado: 2-5 minutos"
 echo ""
 
 # Função para ler input com valor padrão
@@ -111,37 +111,58 @@ echo "✅ Dependências do sistema instaladas"
 
 install_package "sysstat" "mpstat" # Para mpstat e iostat
 
-# Verificar Ruby
-if ! command_exists "ruby"; then
-    echo "❌ Ruby não está instalado!"
-    echo ""
-    echo "Por favor, instale Ruby primeiro com:"
-    echo "  sudo apt-get install -y ruby-full ruby-dev"
-    echo ""
-    echo "Ou execute este script com sudo UMA VEZ para instalar Ruby:"
-    echo "  sudo ./setup_pg_monitor.sh"
-    echo ""
-    exit 1
+# Instalar Ruby usando ruby-install (binários pré-compilados quando disponível)
+if ! command_exists "ruby" || ! ruby -v | grep -q "3\.[0-9]"; then
+    echo "📦 Instalando Ruby 3.2.2..."
+    
+    # Instalar ruby-install se não existir
+    if ! command_exists "ruby-install"; then
+        echo "📥 Baixando ruby-install..."
+        cd /tmp
+        wget -O ruby-install-0.9.3.tar.gz https://github.com/postmodern/ruby-install/releases/download/v0.9.3/ruby-install-0.9.3.tar.gz
+        tar -xzvf ruby-install-0.9.3.tar.gz
+        cd ruby-install-0.9.3/
+        sudo make install
+        cd ~
+        echo "✅ ruby-install instalado"
+    fi
+    
+    # Instalar Ruby 3.2.2 em ~/.rubies
+    echo "📦 Instalando Ruby 3.2.2 (usando binários quando disponível)..."
+    ruby-install --no-reinstall ruby 3.2.2 -- --disable-install-doc
+    
+    # Configurar chruby para usar o Ruby instalado
+    if [ ! -f /usr/local/share/chruby/chruby.sh ]; then
+        echo "📥 Instalando chruby..."
+        cd /tmp
+        wget -O chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.3.9.tar.gz
+        tar -xzvf chruby-0.3.9.tar.gz
+        cd chruby-0.3.9/
+        sudo make install
+        cd ~
+    fi
+    
+    # Adicionar chruby ao bashrc
+    if ! grep -q "chruby.sh" ~/.bashrc; then
+        echo 'source /usr/local/share/chruby/chruby.sh' >> ~/.bashrc
+        echo 'source /usr/local/share/chruby/auto.sh' >> ~/.bashrc
+        echo 'chruby ruby-3.2.2' >> ~/.bashrc
+    fi
+    
+    # Carregar chruby na sessão atual
+    source /usr/local/share/chruby/chruby.sh
+    chruby ruby-3.2.2
+    
+    echo "✅ Ruby 3.2.2 instalado"
 else
     RUBY_VERSION=$(ruby -v | awk '{print $2}' | cut -d'p' -f1)
-    echo "✅ Ruby $RUBY_VERSION encontrado"
+    echo "✅ Ruby $RUBY_VERSION já está instalado"
 fi
 
-# Configurar instalação de gems no diretório do usuário
-export GEM_HOME="$HOME/.gem"
-export PATH="$HOME/.gem/bin:$PATH"
-
-# Adicionar ao bashrc se não existir
-if ! grep -q "GEM_HOME" ~/.bashrc; then
-    echo 'export GEM_HOME="$HOME/.gem"' >> ~/.bashrc
-    echo 'export PATH="$HOME/.gem/bin:$PATH"' >> ~/.bashrc
-    echo "✅ Configuração de gems adicionada ao ~/.bashrc"
-fi
-
-# Instalar bundler no diretório do usuário
+# Instalar bundler
 if ! command_exists "bundle"; then
-    echo "📦 Instalando bundler (no diretório do usuário)..."
-    gem install bundler --user-install --no-document
+    echo "📦 Instalando bundler..."
+    gem install bundler --no-document
     echo "✅ Bundler instalado"
 else
     echo "✅ Bundler já está instalado"
