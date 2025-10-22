@@ -13,9 +13,40 @@ PG_MONITOR_CONFIG_FILE="${CONFIG_DIR}/pg_monitor_config.yml"
 PG_MONITOR_RB_PATH="${PG_MONITOR_BASE_DIR}/pg_monitor.rb"
 ENV_FILE="${PG_MONITOR_BASE_DIR}/.env"
 
-echo "🚀 pg_monitor v2.0 - Setup"
-echo "================================"
+echo "🚀 pg_monitor v2.0 - Setup Automático"
+echo "========================================"
 echo "Diretório: ${PG_MONITOR_BASE_DIR}"
+echo ""
+echo "Este script irá configurar TUDO automaticamente!"
+echo ""
+
+# Função para ler input com valor padrão
+read_with_default() {
+    local prompt="$1"
+    local default="$2"
+    local var_name="$3"
+    
+    read -p "$prompt [$default]: " input
+    eval $var_name="${input:-$default}"
+}
+
+# --- 0. Coletar Informações de Configuração ---
+echo "📝 Configuração Inicial"
+echo "========================"
+echo ""
+echo "Vamos configurar o pg_monitor. Pressione ENTER para usar o valor padrão."
+echo ""
+
+read_with_default "🔹 Host do PostgreSQL" "127.0.0.1" PG_HOST
+read_with_default "🔹 Porta do PostgreSQL" "5432" PG_PORT
+read_with_default "🔹 Nome do banco de dados" "postgres" PG_DBNAME
+read_with_default "🔹 Usuário do PostgreSQL" "postgres" PG_USER
+read -sp "🔹 Senha do PostgreSQL: " PG_PASSWORD
+echo ""
+read_with_default "🔹 Email remetente (Gmail)" "monitor.postgresql@gmail.com" SENDER_EMAIL
+read_with_default "🔹 Email destinatário" "admin@example.com" RECEIVER_EMAIL
+read -sp "🔹 Senha App do Gmail: " EMAIL_PASSWORD
+echo ""
 echo ""
 
 # --- 1. Verificar e instalar dependências do sistema ---
@@ -91,36 +122,45 @@ sudo mkdir -p "$LOG_DIR"
 sudo chown $USER:$USER "$LOG_DIR"
 echo "✅ Diretórios criados"
 
-# --- 4. Configurar arquivo .env ---
-echo -e "\n⚙️  4. Configurando arquivo .env..."
-if [ ! -f "$ENV_FILE" ]; then
-    if [ -f "${PG_MONITOR_BASE_DIR}/.env.example" ]; then
-        cp "${PG_MONITOR_BASE_DIR}/.env.example" "$ENV_FILE"
-        echo "✅ Arquivo .env criado a partir do .env.example"
-        echo ""
-        echo "⚠️  IMPORTANTE: Edite o arquivo .env e configure:"
-        echo "   - PG_USER (usuário do PostgreSQL)"
-        echo "   - PG_PASSWORD (senha do PostgreSQL)"
-        echo "   - EMAIL_PASSWORD (App Password do Gmail)"
-        echo ""
-        echo "   Execute: nano $ENV_FILE"
-    else
-        echo "❌ Erro: .env.example não encontrado"
-        exit 1
-    fi
-else
-    echo "✅ Arquivo .env já existe"
-fi
+# --- 4. Criar arquivo .env ---
+echo -e "\n⚙️  4. Criando arquivo .env..."
+cat > "$ENV_FILE" << EOF
+# pg_monitor v2.0 - Configuração de Ambiente
+# Gerado automaticamente pelo setup_pg_monitor.sh
 
-# --- 5. Verificar arquivo de configuração ---
-echo -e "\n⚙️  5. Verificando configuração..."
+# Credenciais do PostgreSQL
+PG_USER=$PG_USER
+PG_PASSWORD=$PG_PASSWORD
+
+# Senha do Email para alertas
+EMAIL_PASSWORD=$EMAIL_PASSWORD
+EOF
+
+chmod 600 "$ENV_FILE"
+echo "✅ Arquivo .env criado com suas configurações"
+
+# --- 5. Configurar arquivo YAML ---
+echo -e "\n⚙️  5. Configurando pg_monitor_config.yml..."
 if [ ! -f "$PG_MONITOR_CONFIG_FILE" ]; then
     echo "❌ Erro: ${PG_MONITOR_CONFIG_FILE} não encontrado"
-    echo "   O arquivo de configuração deve estar em: config/pg_monitor_config.yml"
     exit 1
-else
-    echo "✅ Arquivo de configuração encontrado"
 fi
+
+# Fazer backup
+cp "$PG_MONITOR_CONFIG_FILE" "${PG_MONITOR_CONFIG_FILE}.backup"
+
+# Atualizar configurações usando sed
+sed -i.tmp "s/host: \".*\"/host: \"$PG_HOST\"/" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s/port: .*/port: $PG_PORT/" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s/name: \".*\"/name: \"$PG_DBNAME\"/" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s/sender_email: \".*\"/sender_email: \"$SENDER_EMAIL\"/" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s/receiver_email: \".*\"/receiver_email: \"$RECEIVER_EMAIL\"/" "$PG_MONITOR_CONFIG_FILE"
+
+# Remover arquivos temporários do sed
+rm -f "${PG_MONITOR_CONFIG_FILE}.tmp"
+
+echo "✅ Configuração YAML atualizada"
+echo "   Backup salvo em: ${PG_MONITOR_CONFIG_FILE}.backup"
 
 # --- 6. Testar Instalação ---
 echo -e "\n🧪 6. Testando instalação..."
@@ -131,40 +171,85 @@ else
     exit 1
 fi
 
-# --- 7. Instruções Finais ---
+echo -e "\n🧪 7. Testando execução..."
+cd "$PG_MONITOR_BASE_DIR"
+if timeout 30 ruby "$PG_MONITOR_RB_PATH" high 2>&1 | tee /tmp/pg_monitor_test.log; then
+    echo "✅ Teste de execução bem-sucedido!"
+else
+    echo "⚠️  Teste de execução falhou. Verifique os logs:"
+    tail -20 /tmp/pg_monitor_test.log
+    echo ""
+    echo "Possíveis problemas:"
+    echo "  - PostgreSQL não está acessível"
+    echo "  - Credenciais incorretas"
+    echo "  - Firewall bloqueando conexão"
+fi
+
+# --- 8. Configurar Cron Jobs ---
+echo -e "\n⏰ 8. Configurando cron jobs..."
+read -p "Deseja configurar cron jobs automaticamente? (s/N): " SETUP_CRON
+
+if [[ "$SETUP_CRON" =~ ^[Ss]$ ]]; then
+    # Criar arquivo temporário com os cron jobs
+    CRON_TEMP=$(mktemp)
+    crontab -l > "$CRON_TEMP" 2>/dev/null || true
+    
+    # Adicionar jobs se não existirem
+    if ! grep -q "pg_monitor.rb high" "$CRON_TEMP"; then
+        cat >> "$CRON_TEMP" << EOF
+
+# pg_monitor - Monitoramento PostgreSQL
+*/2 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb high >> ${LOG_DIR}/cron.log 2>&1
+*/30 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb medium >> ${LOG_DIR}/cron.log 2>&1
+0 */6 * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb low >> ${LOG_DIR}/cron.log 2>&1
+EOF
+        crontab "$CRON_TEMP"
+        echo "✅ Cron jobs configurados!"
+    else
+        echo "⚠️  Cron jobs já existem, pulando..."
+    fi
+    
+    rm -f "$CRON_TEMP"
+else
+    echo "⏭️  Pulando configuração de cron jobs"
+fi
+
+# --- 9. Resumo Final ---
 echo ""
-echo "================================"
-echo "✅ Setup Concluído!"
-echo "================================"
+echo "========================================"
+echo "✅ pg_monitor v2.0 - Instalação Completa!"
+echo "========================================"
 echo ""
-echo "📋 PRÓXIMOS PASSOS:"
+echo "📊 Configuração Aplicada:"
+echo "   PostgreSQL: $PG_HOST:$PG_PORT/$PG_DBNAME"
+echo "   Usuário: $PG_USER"
+echo "   Email: $SENDER_EMAIL → $RECEIVER_EMAIL"
 echo ""
-echo "1️⃣  Editar arquivo .env:"
-echo "   nano $ENV_FILE"
-echo "   Configure: PG_USER, PG_PASSWORD, EMAIL_PASSWORD"
+echo "📁 Arquivos Criados:"
+echo "   ✅ $ENV_FILE"
+echo "   ✅ $PG_MONITOR_CONFIG_FILE"
+echo "   ✅ $LOG_DIR"
 echo ""
-echo "2️⃣  Editar configuração:"
-echo "   nano $PG_MONITOR_CONFIG_FILE"
-echo "   Configure: host, port, emails"
+if [[ "$SETUP_CRON" =~ ^[Ss]$ ]]; then
+echo "⏰ Cron Jobs Ativos:"
+echo "   ✅ Monitoramento crítico (a cada 2 min)"
+echo "   ✅ Performance (a cada 30 min)"
+echo "   ✅ Manutenção (a cada 6 horas)"
 echo ""
-echo "3️⃣  Testar execução:"
+fi
+echo "📝 Comandos Úteis:"
+echo "   # Testar manualmente"
 echo "   ruby $PG_MONITOR_RB_PATH high"
 echo ""
-echo "4️⃣  Configurar cron jobs:"
-echo "   crontab -e"
+echo "   # Ver logs"
+echo "   tail -f $LOG_DIR/cron.log"
 echo ""
-echo "   # Monitoramento crítico (a cada 2 minutos)"
-echo "   */2 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb high >> ${LOG_DIR}/cron.log 2>&1"
+echo "   # Ver cron jobs"
+echo "   crontab -l"
 echo ""
-echo "   # Performance (a cada 30 minutos)"
-echo "   */30 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb medium >> ${LOG_DIR}/cron.log 2>&1"
+echo "   # Editar configuração"
+echo "   nano $PG_MONITOR_CONFIG_FILE"
 echo ""
-echo "   # Manutenção (a cada 6 horas)"
-echo "   0 */6 * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb low >> ${LOG_DIR}/cron.log 2>&1"
+echo "📚 Documentação: README.md, DOCKER_INSTALL.md"
 echo ""
-echo "📚 Documentação:"
-echo "   - README.md"
-echo "   - DOCKER_INSTALL.md"
-echo "   - README_INSTALACAO.md"
-echo ""
-echo "🎉 pg_monitor v2.0 pronto para usar!"
+echo "🎉 Tudo pronto! O monitoramento já está ativo!"
