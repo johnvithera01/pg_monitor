@@ -93,14 +93,18 @@ install_package() {
 }
 
 # Instalar dependências básicas (precisa sudo apenas aqui)
-if ! command_exists "git"; then
-    echo "Instalando git..."
-    if [ "$DISTRO" == "debian" ]; then
-        sudo apt-get update && sudo apt-get install -y git curl build-essential libssl-dev libreadline-dev zlib1g-dev
-    elif [ "$DISTRO" == "redhat" ]; then
-        sudo yum install -y git curl gcc make openssl-devel readline-devel zlib-devel
-    fi
+echo "📦 Instalando dependências do sistema..."
+if [ "$DISTRO" == "debian" ]; then
+    sudo apt-get update
+    sudo apt-get install -y git curl build-essential libssl-dev libreadline-dev \
+        zlib1g-dev libyaml-dev libffi-dev libgdbm-dev libncurses5-dev \
+        autoconf bison libgdbm-dev libgdbm-compat-dev
+elif [ "$DISTRO" == "redhat" ]; then
+    sudo yum install -y git curl gcc make openssl-devel readline-devel \
+        zlib-devel libyaml-devel libffi-devel gdbm-devel ncurses-devel \
+        autoconf bison
 fi
+echo "✅ Dependências do sistema instaladas"
 
 install_package "sysstat" "mpstat" # Para mpstat e iostat
 
