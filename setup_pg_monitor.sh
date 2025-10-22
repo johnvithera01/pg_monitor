@@ -242,12 +242,13 @@ fi
 # Fazer backup
 cp "$PG_MONITOR_CONFIG_FILE" "${PG_MONITOR_CONFIG_FILE}.backup"
 
-# Atualizar configurações usando sed
+# Atualizar configurações usando sed (com cuidado para não substituir smtp_port)
 sed -i.tmp "s|host: \".*\"|host: \"$PG_HOST\"|" "$PG_MONITOR_CONFIG_FILE"
-sed -i.tmp "s|port: .*|port: $PG_PORT|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "/^database:/,/^email:/ s|  port: .*|  port: $PG_PORT|" "$PG_MONITOR_CONFIG_FILE"
 sed -i.tmp "s|name: \".*\"|name: \"$PG_DBNAME\"|" "$PG_MONITOR_CONFIG_FILE"
 sed -i.tmp "s|sender_email: \".*\"|sender_email: \"$SENDER_EMAIL\"|" "$PG_MONITOR_CONFIG_FILE"
 sed -i.tmp "s|receiver_email: \".*\"|receiver_email: \"$RECEIVER_EMAIL\"|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|smtp_port: .*|smtp_port: 587|" "$PG_MONITOR_CONFIG_FILE"
 sed -i.tmp "s|log_file: \".*\"|log_file: \"${LOG_DIR}/pg_monitor.log\"|" "$PG_MONITOR_CONFIG_FILE"
 
 # Remover arquivos temporários do sed
