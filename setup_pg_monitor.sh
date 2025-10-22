@@ -17,8 +17,11 @@ echo "🚀 pg_monitor v2.0 - Setup Automático"
 echo "========================================"
 echo "Diretório: ${PG_MONITOR_BASE_DIR}"
 echo ""
+echo "📋 Pré-requisito: Ruby deve estar instalado"
+echo "   Se não tiver: sudo apt-get install -y ruby-full ruby-dev"
+echo ""
 echo "Este script irá:"
-echo "  ✅ Instalar Ruby do sistema (instalação rápida)"
+echo "  ✅ Instalar gems no diretório do usuário (sem root)"
 echo "  ✅ Configurar tudo automaticamente"
 echo "  ✅ Testar a instalação"
 echo "  ✅ Configurar cron jobs (opcional)"
@@ -108,24 +111,37 @@ echo "✅ Dependências do sistema instaladas"
 
 install_package "sysstat" "mpstat" # Para mpstat e iostat
 
-# Instalar Ruby do sistema (muito mais rápido que compilar)
+# Verificar Ruby
 if ! command_exists "ruby"; then
-    echo "📦 Instalando Ruby do sistema..."
-    if [ "$DISTRO" == "debian" ]; then
-        sudo apt-get install -y ruby-full ruby-dev
-    elif [ "$DISTRO" == "redhat" ]; then
-        sudo yum install -y ruby ruby-devel
-    fi
-    echo "✅ Ruby instalado"
+    echo "❌ Ruby não está instalado!"
+    echo ""
+    echo "Por favor, instale Ruby primeiro com:"
+    echo "  sudo apt-get install -y ruby-full ruby-dev"
+    echo ""
+    echo "Ou execute este script com sudo UMA VEZ para instalar Ruby:"
+    echo "  sudo ./setup_pg_monitor.sh"
+    echo ""
+    exit 1
 else
     RUBY_VERSION=$(ruby -v | awk '{print $2}' | cut -d'p' -f1)
-    echo "✅ Ruby $RUBY_VERSION já está instalado"
+    echo "✅ Ruby $RUBY_VERSION encontrado"
 fi
 
-# Instalar bundler
+# Configurar instalação de gems no diretório do usuário
+export GEM_HOME="$HOME/.gem"
+export PATH="$HOME/.gem/bin:$PATH"
+
+# Adicionar ao bashrc se não existir
+if ! grep -q "GEM_HOME" ~/.bashrc; then
+    echo 'export GEM_HOME="$HOME/.gem"' >> ~/.bashrc
+    echo 'export PATH="$HOME/.gem/bin:$PATH"' >> ~/.bashrc
+    echo "✅ Configuração de gems adicionada ao ~/.bashrc"
+fi
+
+# Instalar bundler no diretório do usuário
 if ! command_exists "bundle"; then
-    echo "📦 Instalando bundler..."
-    sudo gem install bundler
+    echo "📦 Instalando bundler (no diretório do usuário)..."
+    gem install bundler --user-install --no-document
     echo "✅ Bundler instalado"
 else
     echo "✅ Bundler já está instalado"
