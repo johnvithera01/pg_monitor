@@ -27,9 +27,12 @@ module PgMonitor
       puts "[#{current_local_time}] Enviando e-mail para #{@config.receiver_email} com o assunto: #{subject}"
       
       begin
+        # Save config to local variable to use inside block
+        config = @config
+        
         Mail.deliver do
-          to @config.receiver_email
-          from @config.sender_email
+          to config.receiver_email
+          from config.sender_email
           subject subject
           body body
         end
