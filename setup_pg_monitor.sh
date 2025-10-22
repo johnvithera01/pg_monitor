@@ -17,7 +17,11 @@ echo "🚀 pg_monitor v2.0 - Setup Automático"
 echo "========================================"
 echo "Diretório: ${PG_MONITOR_BASE_DIR}"
 echo ""
-echo "Este script irá configurar TUDO automaticamente!"
+echo "Este script irá:"
+echo "  ✅ Instalar rbenv e Ruby 3.2.0 (sem precisar de root)"
+echo "  ✅ Configurar tudo automaticamente"
+echo "  ✅ Testar a instalação"
+echo "  ✅ Configurar cron jobs (opcional)"
 echo ""
 
 # Função para ler input com valor padrão
@@ -88,15 +92,63 @@ install_package() {
     fi
 }
 
-install_package "ruby" "ruby"
-install_package "bundler" "bundle" # Bundler é uma gem, mas é bom tê-lo pré-instalado para evitar problemas
-install_package "sysstat" "mpstat" # Para mpstat e iostat
-# install_package "postgresql-client" "psql" # REMOVIDO: PostgreSQL deve estar instalado externamente
-# install_package "postgresql-contrib" "pg_amcheck" # REMOVIDO: PostgreSQL deve estar instalado externamente
+# Instalar dependências básicas (precisa sudo apenas aqui)
+if ! command_exists "git"; then
+    echo "Instalando git..."
+    if [ "$DISTRO" == "debian" ]; then
+        sudo apt-get update && sudo apt-get install -y git curl build-essential libssl-dev libreadline-dev zlib1g-dev
+    elif [ "$DISTRO" == "redhat" ]; then
+        sudo yum install -y git curl gcc make openssl-devel readline-devel zlib-devel
+    fi
+fi
 
-echo "Dependências do sistema verificadas/instaladas."
-echo "NOTA: Este script assume que PostgreSQL já está instalado no sistema."
-echo "      Se PostgreSQL não estiver instalado, instale-o manualmente antes de continuar."
+install_package "sysstat" "mpstat" # Para mpstat e iostat
+
+# Instalar rbenv e ruby-build
+if ! command_exists "rbenv"; then
+    echo "📦 Instalando rbenv..."
+    git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+    echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+    
+    # Instalar ruby-build
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+    
+    # Carregar rbenv na sessão atual
+    export PATH="$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init -)"
+    
+    echo "✅ rbenv instalado"
+else
+    echo "✅ rbenv já está instalado"
+    export PATH="$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init -)"
+fi
+
+# Instalar Ruby via rbenv
+RUBY_VERSION="3.2.0"
+if ! rbenv versions | grep -q "$RUBY_VERSION"; then
+    echo "📦 Instalando Ruby $RUBY_VERSION via rbenv..."
+    rbenv install $RUBY_VERSION
+    rbenv global $RUBY_VERSION
+    echo "✅ Ruby $RUBY_VERSION instalado"
+else
+    echo "✅ Ruby $RUBY_VERSION já está instalado"
+    rbenv global $RUBY_VERSION
+fi
+
+# Instalar bundler
+if ! command_exists "bundle"; then
+    echo "📦 Instalando bundler..."
+    gem install bundler
+    rbenv rehash
+    echo "✅ Bundler instalado"
+else
+    echo "✅ Bundler já está instalado"
+fi
+
+echo "✅ Dependências verificadas/instaladas"
+echo "NOTA: PostgreSQL deve estar instalado externamente no sistema."
 
 # --- 2. Instalar Ruby Gems ---
 echo -e "\n📦 2. Instalando Ruby Gems..."
@@ -118,8 +170,17 @@ echo "✅ Gems instaladas com sucesso"
 # --- 3. Criar estrutura de diretórios ---
 echo -e "\n📁 3. Criando diretórios..."
 mkdir -p "$CONFIG_DIR"
-sudo mkdir -p "$LOG_DIR"
-sudo chown $USER:$USER "$LOG_DIR"
+
+# Tentar criar diretório de logs com sudo, se falhar usar /tmp
+if sudo mkdir -p "$LOG_DIR" 2>/dev/null && sudo chown $USER:$USER "$LOG_DIR" 2>/dev/null; then
+    echo "✅ Diretório de logs criado: $LOG_DIR"
+else
+    LOG_DIR="${PG_MONITOR_BASE_DIR}/logs"
+    mkdir -p "$LOG_DIR"
+    echo "⚠️  Usando diretório local para logs: $LOG_DIR"
+    echo "   (não foi possível criar /var/log/pg_monitor sem sudo)"
+fi
+
 echo "✅ Diretórios criados"
 
 # --- 4. Criar arquivo .env ---
@@ -136,7 +197,7 @@ PG_PASSWORD=$PG_PASSWORD
 EMAIL_PASSWORD=$EMAIL_PASSWORD
 EOF
 
-chmod 600 "$ENV_FILE"
+chmod 644 "$ENV_FILE"
 echo "✅ Arquivo .env criado com suas configurações"
 
 # --- 5. Configurar arquivo YAML ---
@@ -150,11 +211,12 @@ fi
 cp "$PG_MONITOR_CONFIG_FILE" "${PG_MONITOR_CONFIG_FILE}.backup"
 
 # Atualizar configurações usando sed
-sed -i.tmp "s/host: \".*\"/host: \"$PG_HOST\"/" "$PG_MONITOR_CONFIG_FILE"
-sed -i.tmp "s/port: .*/port: $PG_PORT/" "$PG_MONITOR_CONFIG_FILE"
-sed -i.tmp "s/name: \".*\"/name: \"$PG_DBNAME\"/" "$PG_MONITOR_CONFIG_FILE"
-sed -i.tmp "s/sender_email: \".*\"/sender_email: \"$SENDER_EMAIL\"/" "$PG_MONITOR_CONFIG_FILE"
-sed -i.tmp "s/receiver_email: \".*\"/receiver_email: \"$RECEIVER_EMAIL\"/" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|host: \".*\"|host: \"$PG_HOST\"|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|port: .*|port: $PG_PORT|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|name: \".*\"|name: \"$PG_DBNAME\"|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|sender_email: \".*\"|sender_email: \"$SENDER_EMAIL\"|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|receiver_email: \".*\"|receiver_email: \"$RECEIVER_EMAIL\"|" "$PG_MONITOR_CONFIG_FILE"
+sed -i.tmp "s|log_file: \".*\"|log_file: \"${LOG_DIR}/pg_monitor.log\"|" "$PG_MONITOR_CONFIG_FILE"
 
 # Remover arquivos temporários do sed
 rm -f "${PG_MONITOR_CONFIG_FILE}.tmp"
