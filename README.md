@@ -1,7 +1,7 @@
 # pg_monitor v2.0
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Ruby](https://img.shields.io/badge/Ruby-2.7%2B-red.svg)](https://www.ruby-lang.org/)
+[![Ruby](https://img.shields.io/badge/Ruby-3.2.2-red.svg)](https://www.ruby-lang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
 ## 🚀 Overview
@@ -19,6 +19,10 @@
 - **📱 Multi-Channel Alerts**: Email, Slack, and custom webhooks
 - **📝 Structured Logging**: JSON logging with contextual information
 - **⚙️ Better Configuration**: Validation and environment-based settings
+- **🚀 Automated Setup**: One-command installation script
+- **💀 Auto-Kill Rogue Processes**: Automatically terminate long-running queries
+- **📧 Smart Email Alerts**: Contextual alerts with SMTP authentication
+- **🔧 rbenv Integration**: Proper Ruby version management
 
 ## 🤔 Why This Script? The Pains It Solves
 
@@ -51,6 +55,8 @@ This script offers multiple monitoring levels and advanced capabilities:
     * **`low`:** Identifies unused/redundant indexes and the top 10 slowest queries in your database.
 * **Strategic Automation:**
     * Ability to identify and **automatically terminate** processes that exceed predefined limits (e.g., long-running transactions), preventing database crashes. (Requires `query_kill_threshold_minutes` in config and `features.auto_kill_rogue_processes` to be `true`).
+    * **Configurable Kill Thresholds**: Automatically kill queries after 60 minutes (configurable) to prevent database locks.
+    * **Smart Alerting**: Contextual alerts with proper SMTP authentication and Gmail App Password support.
 * **Table Size History (Level `table_size_history`):**
     * Saves a historical record of table sizes to track growth and plan optimizations, alerting on significant growth (configured via `table_growth_threshold_percent`).
 * **Alert Cooldown:** Prevents alert floods by implementing a cooldown period before sending repeat alerts of the same type.
@@ -59,21 +65,40 @@ This script offers multiple monitoring levels and advanced capabilities:
 
 To use `pg_monitor`, you will need:
 
-* **Ruby:** Version 2.5 or higher.
-* **Ruby Gems:** `pg`, `json`, `time`, `mail`, `fileutils`, `yaml`. Install them via Bundler or manually:
-    ```bash
-    gem install pg json mail fileutils yaml
-    ```
+* **Ruby:** Version 3.2.2 (automatically installed via rbenv).
+* **Ruby Gems:** `pg`, `mail`, `prometheus-client`, `rack`, `puma`, `oauth`. Automatically installed via Bundler.
 * **PostgreSQL Database Access:** A user with appropriate permissions.
 * **Operating System Access:** For `mpstat` (for CPU) and `iostat` (for I/O), which typically come with the `sysstat` package (install if necessary: `sudo apt-get install sysstat` on Debian/Ubuntu).
 * **`pg_amcheck`:** Tool for corruption verification (usually part of `postgresql-contrib` or installed separately).
-* **SMTP Server:** For sending emails (configured via `pg_monitor_config.yml` and environment variables).
+* **SMTP Server:** For sending emails (Gmail App Password recommended).
 
 ---
 
 ## 🚀 Quick Start
 
-### ⚡ One-Line Install
+### ⚡ One-Line Install (Automated Setup)
+
+The fastest way to get pg_monitor running is with our automated setup script:
+
+```bash
+# 1. Install PostgreSQL first (if not already installed)
+sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+
+# 2. Clone and run automated setup (installs everything automatically)
+git clone https://github.com/johnvithera01/pg_monitor.git
+cd pg_monitor
+./setup_pg_monitor.sh
+```
+
+The automated script will:
+- ✅ Install rbenv and Ruby 3.2.2
+- ✅ Install all required dependencies
+- ✅ Configure environment variables interactively
+- ✅ Setup SMTP settings for email alerts
+- ✅ Test the installation
+- ✅ Configure cron jobs (optional)
+
+**⏱️ Installation time: 2-5 minutes**
 
 ---
 
@@ -87,8 +112,8 @@ To use `pg_monitor`, you will need:
 - 💻 **[Instalação Tradicional](README_INSTALACAO.md)** - Para instalação direta no servidor
 
 ### Requirements
-- Ruby >= 2.7
-- Bundler
+- Ruby >= 3.2.2 (automatically installed)
+- Bundler (automatically installed)
 - PostgreSQL client (`libpq`)
 - Prometheus (to scrape metrics)
 - Grafana (to visualize dashboards)
@@ -96,18 +121,19 @@ To use `pg_monitor`, you will need:
 ### Setup
 
 Clone the repository and install dependencies:
+
 ```bash
-# Quick setup with interactive script
-curl -sSL https://raw.githubusercontent.com/johnvithera01/pg_monitor/main/quick-start.sh | bash
+# Quick setup with automated script (RECOMMENDED)
+./setup_pg_monitor.sh
 ```
 
-Or download and run locally:
+Or install manually:
 
 ```bash
-git clone https://github.com/johnvithera01/pg_monitor.git
-cd pg_monitor
-chmod +x quick-start.sh
-./quick-start.sh
+# Install Ruby dependencies via rbenv
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
+bundle install
 ```
 
 ### 🐳 Docker (Recommended)
@@ -372,11 +398,13 @@ curl http://localhost:9394/metrics | grep pgmon
 |----------|----------|-------------|---------|
 | `PG_USER` | ✅ | PostgreSQL username | `postgres` |
 | `PG_PASSWORD` | ✅ | PostgreSQL password | `mypassword` |
-| `EMAIL_PASSWORD` | ✅ | Email app password | `abcd efgh ijkl mnop` |
+| `EMAIL_PASSWORD` | ✅ | Gmail App Password (without spaces) | `ajrvugbjdnwwzloc` |
 | `SLACK_WEBHOOK_URL` | ❌ | Slack webhook for alerts | `https://hooks.slack.com/...` |
 | `WEBHOOK_URL` | ❌ | Custom webhook endpoint | `https://api.example.com/alerts` |
 | `GRAFANA_PASSWORD` | ❌ | Grafana admin password | `admin` |
 | `RACK_ENV` | ❌ | Application environment | `production` |
+
+**Note:** Gmail App Password should be entered **without spaces**. The setup script will automatically remove any spaces for you.
 
 ---
 
@@ -401,7 +429,15 @@ thresholds:
   cpu_threshold_percent: 80
   heap_cache_hit_ratio_min: 95
   query_alert_threshold_minutes: 5
+  query_kill_threshold_minutes: 60
   alert_cooldown_minutes: 60
+
+features:
+  auto_kill_rogue_processes: true
+
+logging:
+  log_file: "/var/log/pg_monitor/pg_monitor.log"
+  log_level: "info"
 ```
 
 ### Docker Compose Override
@@ -478,17 +514,47 @@ echo "0 2 * * 0 cd /opt/pg_monitor && make backup-config" | sudo crontab -
 
 ### Common Issues
 
-#### Connection Problems
+#### Ruby/rbenv Issues
 
 ```bash
-# Test database connection
-make db-test-connection
+# If you get "cannot load such file -- mail" error
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
 
-# Check if PostgreSQL is running
-systemctl status postgresql
+# Install missing gems
+bundle install
 
-# Verify credentials
-psql -h localhost -U $PG_USER -d postgres -c "SELECT version();"
+# Or install manually
+gem install mail prometheus-client pg rack puma oauth --no-document
+```
+
+#### Setup Script Issues
+
+```bash
+# If setup script fails, run manually
+cd pg_monitor
+
+# 1. Install dependencies
+sudo apt-get install -y git curl autoconf bison build-essential libssl-dev \
+    libyaml-dev libreadline6-dev zlib1g-dev libgmp-dev libncurses5-dev \
+    libffi-dev libgdbm-dev libdb-dev uuid-dev libreadline-dev sysstat
+
+# 2. Install rbenv and Ruby
+git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(rbenv init - bash)"' >> ~/.bashrc
+git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+
+# 3. Load rbenv and install Ruby
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
+rbenv install 3.2.2
+rbenv global 3.2.2
+
+# 4. Install gems and run setup
+gem install bundler
+bundle install
+./setup_pg_monitor.sh
 ```
 
 #### Docker Issues
@@ -529,8 +595,40 @@ grep -A 10 "email:" config/pg_monitor_config.yml
 telnet smtp.gmail.com 587
 
 # Verify app password (for Gmail)
-# Use App Password, not regular password
+# 1. Go to https://myaccount.google.com/apppasswords
+# 2. Generate App Password for "Mail"
+# 3. Use password WITHOUT spaces (e.g., 'abcd' not 'a b c d')
+# 4. Update EMAIL_PASSWORD in .env file
+
+# Test email functionality
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
+ruby -e "
+require 'mail'
+Mail.defaults do
+  delivery_method :smtp, {
+    address: 'smtp.gmail.com',
+    port: 587,
+    user_name: 'your-email@gmail.com',
+    password: 'your-app-password',
+    authentication: 'plain',
+    enable_starttls_auto: true
+  }
+end
+Mail.deliver do
+  to 'test@example.com'
+  from 'your-email@gmail.com'
+  subject 'Test'
+  body 'Test message'
+end
+puts 'Email sent successfully!'
+"
 ```
+
+#### Common Email Issues:
+- **535 Authentication Error**: Wrong app password or 2FA not enabled
+- **SMTP Port Error**: Make sure `smtp_port: 587` in config (not 5432)
+- **App Password with Spaces**: Gmail App Passwords should not have spaces
 
 ### FAQ
 
@@ -540,6 +638,22 @@ A:
 - `medium`: Every 30-60 minutes (performance checks)
 - `low`: Daily (maintenance tasks)
 - `security`: Daily (log analysis)
+
+**Q: How does auto-kill of idle sessions work?**
+A: pg_monitor can automatically terminate long-running queries:
+```yaml
+# In config/pg_monitor_config.yml
+thresholds:
+  query_alert_threshold_minutes: 5   # Alert after 5 minutes
+  query_kill_threshold_minutes: 60   # Kill after 60 minutes
+
+features:
+  auto_kill_rogue_processes: true     # Enable auto-kill
+```
+- Detects queries running > 5 minutes
+- Sends email alert
+- Automatically kills queries after 60 minutes using `pg_terminate_backend()`
+- Prevents database locks and performance issues
 
 **Q: Can I monitor multiple PostgreSQL instances?**
 A: Yes, run separate pg_monitor instances with different configuration files:
@@ -672,10 +786,15 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 🎯 Roadmap
 
+- [x] **Automated Setup Script** - One-command installation
+- [x] **Auto-Kill Rogue Processes** - Terminate long-running queries automatically
+- [x] **Enhanced SMTP Authentication** - Gmail App Password support
+- [x] **Ruby 3.2.2 Support** - Modern Ruby version management
+- [x] **Comprehensive Error Handling** - Better debugging and troubleshooting
 - [ ] Web UI for configuration and monitoring
 - [ ] Support for PostgreSQL clusters
 - [ ] Machine learning-based anomaly detection
-- [ ] Integration with more alerting systems
+- [ ] Integration with more alerting systems (Teams, Discord)
 - [ ] Real-time streaming metrics
 - [ ] Mobile app for alerts
 
