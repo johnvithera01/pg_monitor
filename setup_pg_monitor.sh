@@ -190,7 +190,6 @@ fi
 # Garantir que rbenv está carregado
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init - bash)"
-rbenv shell 3.2.2
 
 # Verificar versão do Ruby
 echo "🔍 Usando Ruby: $(ruby -v)"
@@ -272,6 +271,11 @@ fi
 
 echo -e "\n🧪 7. Testando execução..."
 cd "$PG_MONITOR_BASE_DIR"
+
+# Garantir que rbenv está carregado para o teste
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init - bash)"
+
 if timeout 30 ruby "$PG_MONITOR_RB_PATH" high 2>&1 | tee /tmp/pg_monitor_test.log; then
     echo "✅ Teste de execução bem-sucedido!"
 else
@@ -298,9 +302,9 @@ if [[ "$SETUP_CRON" =~ ^[Ss]$ ]]; then
         cat >> "$CRON_TEMP" << EOF
 
 # pg_monitor - Monitoramento PostgreSQL
-*/2 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb high >> ${LOG_DIR}/cron.log 2>&1
-*/30 * * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb medium >> ${LOG_DIR}/cron.log 2>&1
-0 */6 * * * cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb low >> ${LOG_DIR}/cron.log 2>&1
+*/2 * * * * export PATH="$HOME/.rbenv/bin:$PATH" && eval "\$(rbenv init - bash)" && cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb high >> ${LOG_DIR}/cron.log 2>&1
+*/30 * * * * export PATH="$HOME/.rbenv/bin:$PATH" && eval "\$(rbenv init - bash)" && cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb medium >> ${LOG_DIR}/cron.log 2>&1
+0 */6 * * * export PATH="$HOME/.rbenv/bin:$PATH" && eval "\$(rbenv init - bash)" && cd ${PG_MONITOR_BASE_DIR} && ruby pg_monitor.rb low >> ${LOG_DIR}/cron.log 2>&1
 EOF
         crontab "$CRON_TEMP"
         echo "✅ Cron jobs configurados!"
