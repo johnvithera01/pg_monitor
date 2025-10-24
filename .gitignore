@@ -1,0 +1,40 @@
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Ruby
+.bundle/
+vendor/
+*.gem
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+test_email.rb
+run.sh
+EXECUTAR.md
+INSTALACAO_SERVIDOR.md
+MIGRACAO_V2.md
+pg_monitor_new.rb
+
+# Backup files
+*.backup
+*~
